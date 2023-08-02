@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Domain;
 using Infrastracture;
-using Domain;
+using System.Net;
+using System.Net.Sockets;
 
 namespace HoneyPotter.Listener
 {
@@ -41,30 +36,50 @@ namespace HoneyPotter.Listener
             }
         }
 
-        public void Start()
+        public async void Start()
         {
             var server = new TcpListener(_iPAddress, _port);
             server.Start();
 
-            while (true)
+            Console.WriteLine($"using port: {_port}");
+            Console.WriteLine($"Port open successful");
+
+            try
             {
-                using TcpClient newClient = server.AcceptTcpClient();
-
-                IPEndPoint iPEndPoint = newClient.Client.RemoteEndPoint as IPEndPoint;
-
-                Console.WriteLine($"Incomming connection from: {iPEndPoint.Address}");
-
-                if (_banList.Any(x => x.Equals(iPEndPoint.Address)))
+                while (true)
+                    await Accept(await server.AcceptTcpClientAsync());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"starting Accepting TcpClients error: {ex.Message}");
+            }
+        }
+        async Task Accept(TcpClient client)
+        {
+            await Task.Yield();
+            try
+            {
+                using (client)
                 {
-                    Console.WriteLine($"ip: {iPEndPoint.Address} already exists in banlist");
-                    newClient.Close();
-                    continue;
-                }
-                
-                _banList.Add(iPEndPoint.Address);
-                _opnSenseClient.BlockIp(_banList);
+                    Console.WriteLine();
+                    IPEndPoint iPEndPoint = client.Client.RemoteEndPoint as IPEndPoint;
+                    Console.WriteLine($"Incomming connection from: {iPEndPoint.Address}");
 
-                newClient.Close();
+                    if (_banList.Any(x => x.Equals(iPEndPoint.Address)))
+                    {
+                        Console.WriteLine($"ip: {iPEndPoint.Address} already exists in banlist");
+                        client.Close();
+                    }
+
+                    _banList.Add(iPEndPoint.Address);
+                    _opnSenseClient.BlockIp(_banList);
+
+                    client.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Accept client error: {ex.Message}");
             }
         }
     }

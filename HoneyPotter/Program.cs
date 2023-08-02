@@ -11,10 +11,13 @@ namespace HoneyPotter
     {
         static void Main(string[] args)
         {
+            var menu = new MenuManager();
+            menu.PrintHeader();
+
             var settings = new FirewallSettings();
             if (!File.Exists(Helper.configFileFirewallSettings))
             {
-                if(!Directory.Exists(Helper.AppConfigPath))
+                if (!Directory.Exists(Helper.AppConfigPath))
                     Directory.CreateDirectory(Helper.AppConfigPath);
 
                 var configManager = new ConfigurationManager();
@@ -29,10 +32,21 @@ namespace HoneyPotter
                 File.WriteAllText(Helper.configFileFirewallSettings, serialized);
             }
 
+            Console.WriteLine("Trying to load config");
             settings = settings.Load();
 
+            Console.WriteLine("Trying to open port");
             var server = new Server(80, IPAddress.Any, settings);
             server.Start();
+
+            Console.WriteLine();
+
+            Thread.Sleep((int)TimeSpan.FromSeconds(2).TotalMilliseconds);
+            while (true)
+            {
+                if (menu.LoadStart())
+                    break;
+            }
         }
     }
 }

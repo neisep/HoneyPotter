@@ -10,6 +10,7 @@ namespace HoneyPotter.Extensions
         {
             var serializedData = File.ReadAllText(Helper.configFileFirewallSettings);
 
+            Console.WriteLine("Configuration loaded successful");
             return JsonConvert.DeserializeObject<FirewallSettings>(serializedData);
         }
     }
